@@ -1,5 +1,6 @@
 package cl.biblioteca.otaku.bff.service.serviceImpl;
 
+import cl.biblioteca.otaku.bff.models.SeriesDataModel;
 import cl.biblioteca.otaku.bff.service.VideoService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,13 +32,56 @@ public class VideoServiceImpl implements VideoService {
             @Value("${video-service.url}") String url
     ) {
         this.webClient = webBuilder
+                                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(16 * 1024 * 1024))
                                  .baseUrl(url)
                                  .build();
     }
 
-    public Mono<ResponseEntity<Flux<DataBuffer>>> getVideo(String fileName, String rangeHeader) {
+    // Method to load all available series
+    // returns a List<String> with the names of the series available.
+
+    @Override
+    public Mono<List<String>> getAllSeries() {
+        logger.info("Obteniendo series disponibles");
         return webClient.get()
-                       .uri("/api/videos/playVideo/{filename}", fileName)
+                       .uri("/api/videos/getAvailableSeries")
+                       .retrieve()
+                       .bodyToMono(String.class)
+                       .<List<String>>handle((json, sink) -> {
+                           try {
+                               sink.next(objectMapper.readValue(json, new TypeReference<>() {
+                               }));
+                           } catch (Exception e) {
+                               sink.error(new RuntimeException("Error al deserializar la respuesta", e));
+                           }
+                       })
+                       .doOnError(e -> logger.error("Error al obtener videos disponibles", e));
+    }
+
+    // Load the details for one particular series
+    @Override
+    public Mono<SeriesDataModel> getDetails(String seriesName) {
+        logger.info("Obteniendo datos de la serie {}", seriesName);
+        return webClient.get()
+                       .uri("/api/videos/getDetails" + seriesName )
+                       .retrieve()
+                       .bodyToMono(String.class)
+                       .<SeriesDataModel>handle((json, sink) -> {
+                           try {
+                               sink.next(objectMapper.readValue(json, new TypeReference<>() {
+                               }));
+                           } catch (Exception e) {
+                               sink.error(new RuntimeException("Error al deserializar la respuesta", e));
+                           }
+                       })
+                       .doOnError(e -> logger.error("Error al obtener datos de la serie {}", seriesName, e));
+    }
+
+
+
+    public Mono<ResponseEntity<Flux<DataBuffer>>> getVideo(String folderName, String fileName, String rangeHeader) {
+        return webClient.get()
+                       .uri("/api/videos/playVideo/{folderName}/{filename}", folderName, fileName)
                        .header(HttpHeaders.RANGE, rangeHeader != null ? rangeHeader : "")
                        .accept(MediaType.APPLICATION_OCTET_STREAM)
                        .retrieve()
@@ -82,14 +126,16 @@ public class VideoServiceImpl implements VideoService {
                        .doOnError(e -> logger.error("Error al obtener videos disponibles", e));
     }
 
+
+
     @Override
-    public Mono<List<String>> getAllSeries() {
-        logger.info("Obteniendo series disponibles");
+    public Mono<List<SeriesDataModel>> getSeriesData() {
+        logger.info("Obteniendo datos de las series ...");
         return webClient.get()
-                       .uri("/api/videos/getAvailableSeries")
+                       .uri("/api/videos/getSeriesData")
                        .retrieve()
                        .bodyToMono(String.class)
-                       .<List<String>>handle((json, sink) -> {
+                       .<List<SeriesDataModel>>handle((json, sink) -> {
                            try {
                                sink.next(objectMapper.readValue(json, new TypeReference<>() {
                                }));
@@ -99,4 +145,26 @@ public class VideoServiceImpl implements VideoService {
                        })
                        .doOnError(e -> logger.error("Error al obtener videos disponibles", e));
     }
+
+    @Override
+    public Mono<List<SeriesDataModel>> getHighlightedMedia() {
+        logger.info("Obteniendo datos de series destacadas ...");
+        return webClient.get()
+                       .uri("/api/videos/getHighlightedMedia")
+                       .retrieve()
+                       .bodyToMono(String.class)
+                       .<List<SeriesDataModel>>handle((json, sink) -> {
+                           try {
+                               logger.info("json: {}", json);
+                               sink.next(objectMapper.readValue(json, new TypeReference<>() {
+                               }));
+                           } catch (Exception e) {
+                               sink.error(new RuntimeException("Error al deserializar la respuesta", e));
+                           }
+                       })
+                       .doOnError(e -> logger.error("Error al obtener videos disponibles", e));
+    }
+
+
+
 }

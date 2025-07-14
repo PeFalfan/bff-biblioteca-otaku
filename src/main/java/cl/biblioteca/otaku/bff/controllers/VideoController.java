@@ -1,7 +1,7 @@
 package cl.biblioteca.otaku.bff.controllers;
 
+import cl.biblioteca.otaku.bff.models.SeriesDataModel;
 import cl.biblioteca.otaku.bff.service.VideoService;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -21,12 +21,39 @@ public class VideoController {
         this.videoService = videoService;
     }
 
-    @GetMapping("/getVideo/{fileName}")
+    // Endpoint to load all available series
+    // returns a List<String> with the names of the series available.
+
+    @GetMapping("/getListedSeries")
+    public Mono<List<String>> getAllSeries(){
+        return videoService.getAllSeries();
+    }
+
+    // Method to load Highlighted media
+    // 12 series
+    // 12 manga
+    // 12 novels
+    @GetMapping("/getHighlightedMedia")
+    public Mono<List<SeriesDataModel>> getHighlightedMedia() {
+        return videoService.getHighlightedMedia();
+    };
+
+
+    // Method to get the details of one specific series
+    // we need the name of the series in question
+    @GetMapping("/getDetails{seriesName}")
+    public Mono<SeriesDataModel> getDetails(@PathVariable String seriesName){
+        return videoService.getDetails(seriesName);
+    }
+
+
+    @GetMapping("/getVideo/{folderName}/{fileName}")
     public Mono<ResponseEntity<Flux<DataBuffer>>> loadVideo(
             @PathVariable String fileName,
+            @PathVariable String folderName,
             @RequestHeader(value = HttpHeaders.RANGE, required = false) String rangeHeader
             ) {
-        return videoService.getVideo(fileName, rangeHeader);
+        return videoService.getVideo(folderName, fileName, rangeHeader);
     }
 
     @GetMapping("/getAllVideos")
@@ -34,13 +61,8 @@ public class VideoController {
         return videoService.getAllVideos();
     }
 
-    @GetMapping("/getListedSeries")
-    public Mono<List<String>> getAllSeries(){
-        return videoService.getAllSeries();
-    }
-
-    @GetMapping("/testService")
-    public String testService(){
-        return "testService from BFF";
+    @GetMapping("/getseriesData")
+    public Mono<List<SeriesDataModel>> getSeriesData(){
+        return videoService.getSeriesData();
     }
 }
