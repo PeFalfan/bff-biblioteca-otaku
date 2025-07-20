@@ -23,7 +23,7 @@ public class VideoServiceImpl implements VideoService {
     private final WebClient webClient;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    public ObjectMapper objectMapper;
 
     private static final Logger logger = LoggerFactory.getLogger(VideoServiceImpl.class);
 

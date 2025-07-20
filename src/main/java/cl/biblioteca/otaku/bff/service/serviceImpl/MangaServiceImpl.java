@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -41,15 +42,8 @@ public class MangaServiceImpl implements MangaService {
         return webClient.get()
                        .uri("/api/mangas/getMangas")
                        .retrieve()
-                       .bodyToMono(String.class)
-                       .<List<MangaDataModel>>handle((json, sink) -> {
-                           try {
-                               sink.next(objectMapper.readValue(json, new TypeReference<>() {}));
-                           } catch (Exception e) {
-                               sink.error(new RuntimeException("Error al deserializar la respuesta", e));
-                           }
-                       })
-                       .doOnError(e -> logger.error("Error al deserializar la respuesta", e));
+                       .bodyToMono(new ParameterizedTypeReference<List<MangaDataModel>>() {})
+                       .doOnError(e -> logger.error("Error al obtener la lista de mangas", e));
     }
 
     @Override
@@ -86,15 +80,7 @@ public class MangaServiceImpl implements MangaService {
         return webClient.get()
                        .uri("/api/mangas/getManga/" + mangaName)
                        .retrieve()
-                       .bodyToMono(String.class)
-                       .<MangaDataModel>handle((json, sink) -> {
-                           try {
-                               sink.next(objectMapper.readValue(json, new TypeReference<>() {
-                               }));
-                           } catch (Exception e) {
-                               sink.error(new RuntimeException("Error al deserializar la respuesta", e));
-                           }
-                       })
-                       .doOnError(e-> logger.error("Error al deserializar la respuesta", e));
+                       .bodyToMono(MangaDataModel.class)
+                       .doOnError(e -> logger.error("Error al obtener detalles de manga", e));
     }
 }

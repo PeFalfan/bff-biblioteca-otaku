@@ -7,6 +7,7 @@ public class MangaDataModel {
     private String title;
     private int currentChapters;
     private String mainTag;
+    private String[] allTags;
     private String description;
     private ArrayList<MangaChapterModel> chapters;
     private String coverUrl;
@@ -96,5 +97,13 @@ public class MangaDataModel {
 
     public void setYearOfRelease(int yearOfRelease) {
         this.yearOfRelease = yearOfRelease;
+    }
+
+    public String[] getAllTags() {
+        return allTags;
+    }
+
+    public void setAllTags(String[] allTags) {
+        this.allTags = allTags;
     }
 }

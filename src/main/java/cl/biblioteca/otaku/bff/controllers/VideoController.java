@@ -41,7 +41,7 @@ public class VideoController {
 
     // Method to get the details of one specific series
     // we need the name of the series in question
-    @GetMapping("/getDetails{seriesName}")
+    @GetMapping("/getDetails/{seriesName}")
     public Mono<SeriesDataModel> getDetails(@PathVariable String seriesName){
         return videoService.getDetails(seriesName);
     }
